@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Son Meme Database</title>
+<style>
+  :root{--bg:#121216;--panel:#1c1c23;--line:#2c2c36;--text:#ececf1;--muted:#9a9aa8;--accent:#ffcc33;--danger:#ff6b6b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{padding:28px 16px 12px;max-width:1100px;margin:auto;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  h1{margin:0;font-size:28px;letter-spacing:-.5px}
+  h1 span{color:var(--accent)}
+  .sub{color:var(--muted);margin-top:4px}
+  .acct{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted)}
+  .controls{max-width:1100px;margin:auto;padding:8px 16px;display:flex;gap:8px;flex-wrap:wrap}
+  input,select,textarea,button{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+  #q{flex:1;min-width:200px}
+  button,.btn{cursor:pointer}
+  button.primary,.btn.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+  button.danger{border-color:var(--danger);color:var(--danger);background:transparent}
+  button:disabled{opacity:.6;cursor:wait}
+  .btn{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+  .tags{max-width:1100px;margin:auto;padding:4px 16px 8px;display:flex;gap:6px;flex-wrap:wrap}
+  .tag{font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted)}
+  .tag.on{background:var(--accent);color:#111;border-color:var(--accent)}
+  .count{max-width:1100px;margin:auto;padding:0 16px;color:var(--muted);font-size:13px}
+  .grid{max-width:1100px;margin:auto;padding:12px 16px 40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+  .card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .1s}
+  .card:hover{transform:translateY(-2px);border-color:#44444f}
+  .card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#000}
+  .card .dl{position:absolute;top:8px;right:8px;width:34px;height:34px;padding:0;display:grid;place-items:center;border-radius:50%;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.2);color:#fff;text-decoration:none;font-size:16px;opacity:0;transition:opacity .15s}
+  .card:hover .dl,.card .dl:focus{opacity:1}
+  @media (hover:none){.card .dl{opacity:1}}
+  .card .b{padding:10px 12px}
+  .card h3{margin:0 0 4px;font-size:16px}
+  .card p{margin:0;color:var(--muted);font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .meta{font-size:12px;color:var(--muted);margin-top:6px}
+  .meta a{color:var(--accent)}
+  dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;max-width:640px;width:calc(100% - 32px);padding:0}
+  dialog::backdrop{background:rgba(0,0,0,.7)}
+  dialog img{width:100%;max-height:60vh;object-fit:contain;background:#000;display:block}
+  .d{padding:16px}
+  .d h2{margin:0 0 6px}
+  .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:0 16px 16px}
+  form label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+  form input,form textarea{width:100%}
+  .err{color:var(--danger);font-size:14px;min-height:1.2em;margin-top:8px}
+  #preview{display:none;max-height:200px;margin-top:8px;border-radius:8px}
+  .empty{color:var(--muted);text-align:center;padding:40px;grid-column:1/-1}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>The <span>Son</span> Meme Database</h1>
+    <div class="sub">Every variant of "Son 😭😭😭😭😭", the Anthony Mackie smirk meme, searchable.</div>
+  </div>
+  <div class="acct">
+    <span id="who" hidden></span>
+    <button id="loginBtn">Log in</button>
+    <button id="logoutBtn" hidden>Log out</button>
+  </div>
+</header>
+
+<div class="controls">
+  <input id="q" type="search" placeholder="Search name, description, origin, tags…">
+  <select id="sort">
+    <option value="name">A → Z</option>
+    <option value="new">Newest added</option>
+    <option value="old">Oldest added</option>
+  </select>
+  <button class="primary" id="addBtn" hidden>+ Upload variant</button>
+</div>
+<div class="tags" id="tags"></div>
+<div class="count" id="count"></div>
+<main class="grid" id="grid"></main>
+<footer style="max-width:1100px;margin:auto;padding:0 16px 32px;color:var(--muted);font-size:12px">Compiled from the Know Your Meme galleries for "Son 😭😭😭😭😭", "Sonion" and "Charlie Kirk Son", Son variants posted to Tenor and Giphy, and member uploads. Images are hotlinked from their original hosts.</footer>
+
+<dialog id="view">
+  <img id="vImg" alt="" referrerpolicy="no-referrer" onerror="this.src='images/placeholder.svg'">
+  <div class="d">
+    <h2 id="vName"></h2>
+    <div id="vDesc"></div>
+    <div class="meta" id="vMeta"></div>
+  </div>
+  <div class="row">
+    <button class="danger" id="vDelete" hidden>Delete</button>
+    <a class="btn primary" id="vDownload" download>⬇ Download</a>
+    <button id="vClose">Close</button>
+  </div>
+</dialog>
+
+<dialog id="login">
+  <form class="d" id="loginForm">
+    <h2>Log in</h2>
+    <label>Username</label><input name="username" autocomplete="username" required>
+    <label>Password</label><input name="password" type="password" autocomplete="current-password" required>
+    <div class="err" id="loginErr"></div>
+    <div class="row" style="padding:12px 0 0">
+      <button type="button" data-close>Cancel</button>
+      <button class="primary" type="submit">Log in</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="add">
+  <form class="d" id="addForm">
+    <h2>Upload a variant</h2>
+    <label>Image * (PNG, JPG, GIF or WebP, max 4 MB)</label>
+    <input name="image" type="file" accept="image/png,image/jpeg,image/gif,image/webp" required>
+    <img id="preview" alt="">
+    <label>Name *</label><input name="name" maxlength="120" required>
+    <label>Description</label><textarea name="description" rows="3" maxlength="1000"></textarea>
+    <label>Origin (platform / account)</label><input name="origin" maxlength="200">
+    <label>Tags (comma-separated)</label><input name="tags" placeholder="pun, food">
+    <label>Source link</label><input name="source" type="url" placeholder="https://…">
+    <div class="err" id="addErr"></div>
+    <div class="row" style="padding:12px 0 0">
+      <button type="button" data-close>Cancel</button>
+      <button class="primary" type="submit">Upload</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+let DATA=[], active=new Set(), USER=null, current=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PH='images/placeholder.svg';
+
+// Link that downloads an entry's image as a file, or null if there is none.
+function downloadUrl(m){
+  const img=m.image||'';
+  if(!img||img.includes('placeholder'))return null;
+  if(img.startsWith('/api/image'))return img+'&download=1';
+  if(/^https:\/\/(i\.kym-cdn\.com|(media1?|c)\.tenor\.com|(media\d?|i)\.giphy\.com)\//.test(img))return '/api/download?src='+encodeURIComponent(img)+'&name='+encodeURIComponent(m.id);
+  if(!/^https?:/i.test(img))return img; // file in this site's images/ folder
+  return null;
+}
+
+async function load(){
+  const [base,up]=await Promise.all([
+    fetch('data.json').then(r=>r.json()).catch(()=>null),
+    fetch('/api/variants').then(r=>r.ok?r.json():[]).catch(()=>[])
+  ]);
+  if(!base){$('grid').innerHTML='<div class="empty">Could not load data.json.</div>';return}
+  DATA=[...up,...base];
+  buildTags();render();
+}
+
+function buildTags(){
+  const all=[...new Set(DATA.flatMap(m=>m.tags||[]))].sort();
+  $('tags').innerHTML=all.map(t=>`<button class="tag${active.has(t)?' on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+}
+$('tags').onclick=e=>{const t=e.target.dataset.t;if(!t)return;active.has(t)?active.delete(t):active.add(t);e.target.classList.toggle('on');render()};
+
+function render(){
+  const q=$('q').value.toLowerCase().trim(), s=$('sort').value;
+  let list=DATA.filter(m=>{
+    if(active.size && ![...active].every(t=>(m.tags||[]).includes(t)))return false;
+    if(!q)return true;
+    return [m.name,m.description,m.origin,m.uploader,(m.tags||[]).join(' ')].join(' ').toLowerCase().includes(q);
+  });
+  const d=m=>m.added||(m.year?m.year+'-01-01':'');
+  list.sort((a,b)=>s==='name'?a.name.localeCompare(b.name):s==='new'?d(b).localeCompare(d(a)):(d(a)||'9999').localeCompare(d(b)||'9999'));
+  $('count').textContent=`${list.length} of ${DATA.length} variants`;
+  $('grid').innerHTML=list.length?list.map(m=>{
+    const dl=downloadUrl(m);
+    return `<article class="card" data-id="${esc(m.id)}">
+      <img loading="lazy" referrerpolicy="no-referrer" src="${esc(m.image||PH)}" alt="${esc(m.name)}" onerror="this.src='${PH}'">
+      ${dl?`<a class="dl" href="${esc(dl)}" download title="Download image" aria-label="Download ${esc(m.name)}">⬇</a>`:''}
+      <div class="b"><h3>${esc(m.name)}</h3><p>${esc(m.description)}</p>
+      <div class="meta">${[m.added||m.year,m.origin].filter(Boolean).map(esc).join(' · ')}</div></div>
+    </article>`}).join(''):'<div class="empty">No matches.</div>';
+}
+$('q').oninput=render; $('sort').onchange=render;
+
+$('grid').onclick=e=>{
+  if(e.target.closest('.dl'))return; // let the download link work on its own
+  const c=e.target.closest('.card'); if(!c)return;
+  current=DATA.find(x=>x.id===c.dataset.id); const m=current;
+  $('vImg').src=m.image||PH; $('vImg').alt=m.name;
+  $('vName').textContent=m.name; $('vDesc').textContent=m.description||'';
+  const bits=[m.added?'Added '+m.added:m.year,m.origin,m.uploaded&&m.uploader?'Uploaded by '+m.uploader:'',(m.tags||[]).map(t=>'#'+t).join(' ')].filter(Boolean).map(esc);
+  if(m.source)bits.push(`<a href="${esc(m.source)}" target="_blank" rel="noopener">original post</a>`);
+  if(m.kym)bits.push(`<a href="${esc(m.kym)}" target="_blank" rel="noopener">Know Your Meme</a>`);
+  $('vMeta').innerHTML=bits.join(' · ');
+  const dl=downloadUrl(m);
+  $('vDownload').hidden=!dl; if(dl)$('vDownload').href=dl;
+  $('vDelete').hidden=!(USER&&m.uploaded);
+  $('view').showModal();
+};
+$('vClose').onclick=()=>$('view').close();
+document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d||e.target.hasAttribute('data-close'))d.close()}));
+
+$('vDelete').onclick=async()=>{
+  if(!current||!confirm(`Delete "${current.name}"? This can't be undone.`))return;
+  const r=await fetch('/api/variants?id='+encodeURIComponent(current.id),{method:'DELETE'});
+  if(!r.ok){alert((await r.json().catch(()=>({}))).error||'Delete failed');return}
+  DATA=DATA.filter(x=>x!==current); $('view').close(); buildTags(); render();
+};
+
+// ---- login ----
+function setUser(u){
+  USER=u;
+  $('who').hidden=!u; $('who').textContent=u?'Logged in as '+u:'';
+  $('loginBtn').hidden=!!u; $('logoutBtn').hidden=!u; $('addBtn').hidden=!u;
+}
+fetch('/api/auth').then(r=>r.ok?r.json():{user:null}).then(d=>setUser(d.user)).catch(()=>setUser(null));
+
+$('loginBtn').onclick=()=>{$('loginForm').reset();$('loginErr').textContent='';$('login').showModal()};
+$('loginForm').onsubmit=async e=>{
+  e.preventDefault();
+  const btn=e.submitter; btn.disabled=true; $('loginErr').textContent='';
+  const f=new FormData(e.target);
+  try{
+    const r=await fetch('/api/auth',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:f.get('username'),password:f.get('password')})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||'Login failed');
+    setUser(d.user); $('login').close();
+  }catch(err){$('loginErr').textContent=err.message.includes('fetch')?'Login is not available on this deploy.':err.message}
+  finally{btn.disabled=false}
+};
+$('logoutBtn').onclick=async()=>{await fetch('/api/auth',{method:'DELETE'}).catch(()=>{});setUser(null)};
+
+// ---- upload ----
+$('addBtn').onclick=()=>{$('addForm').reset();$('addErr').textContent='';$('preview').style.display='none';$('add').showModal()};
+$('addForm').image.onchange=e=>{
+  const f=e.target.files[0]; const p=$('preview');
+  if(!f){p.style.display='none';return}
+  if(f.size>4*1024*1024){$('addErr').textContent='Image must be 4 MB or smaller.';e.target.value='';p.style.display='none';return}
+  $('addErr').textContent=''; p.src=URL.createObjectURL(f); p.style.display='block';
+};
+$('addForm').onsubmit=async e=>{
+  e.preventDefault();
+  const btn=e.submitter; btn.disabled=true; btn.textContent='Uploading…'; $('addErr').textContent='';
+  try{
+    const r=await fetch('/api/variants',{method:'POST',body:new FormData(e.target)});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===401)setUser(null);
+    if(!r.ok)throw new Error(d.error||'Upload failed');
+    DATA.unshift(d); buildTags(); render(); $('add').close();
+  }catch(err){$('addErr').textContent=err.message}
+  finally{btn.disabled=false;btn.textContent='Upload'}
+};
+
+load();
+</script>
+</body>
+</html>
